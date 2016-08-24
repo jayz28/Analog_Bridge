@@ -2,8 +2,10 @@
 
 apt-get install portaudio19-dev -y
 
-cp DMRGateway /usr/local/bin
+mkdir -p /opt/DMRGateway
 
-cp DMRGateway.ini /etc
+cp DMRGateway /opt/DMRGateway
+
+cp DMRGateway.ini /opt/DMRGateway
 
 
