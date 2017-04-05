@@ -1,0 +1,3 @@
+# Add to the bottom of /boot/config.txt
+# init_uart_clock=64000000
+init_uart_clock=3686400
