@@ -16,4 +16,12 @@ telemdynamic = 0                        ; 0 = disallow users to change the local
 linktolink = no                         ; disables forcing physical half-duplex operation of main repeater while
                                         ; still keeping half-duplex semantics (optional)
 
-
+[functions]
+; Thanks to Tom, K5TRA
+D10=cmd, /bin/bash -c 'echo -n "section=Shutup" | nc 127.0.0.1 31002' && echo "OFF">/etc/asterisk/DMR_status
+D11=cmd, /bin/bash -c 'echo -n "section=ALL" | nc 127.0.0.1 31002' && echo "ALL">/etc/asterisk/DMR_status
+D13=cmd, /bin/bash -c 'echo -n "section=DMR-MARC" | nc 127.0.0.1 31002' && echo "DMR-MARC">/etc/asterisk/DMR_status
+D14=cmd, /bin/bash -c 'echo -n "section=Regional" | nc 127.0.0.1 31002' && echo "Regional">/etc/asterisk/DMR_status
+D15=cmd, /bin/bash -c 'echo -n "section=StateWide" | nc 127.0.0.1 31002' && echo "StateWide">/etc/asterisk/DMR_status
+D16=cmd, /bin/bash -c 'echo -n "section=Local" | nc 127.0.0.1 31002' && echo "Local">/etc/asterisk/DMR_status
+D17=cmd, /bin/bash -c 'echo -n "section=BrandMeister" | nc 127.0.0.1 31002' && echo "Brandmeister">/etc/asterisk/DMR_status
