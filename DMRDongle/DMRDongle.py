@@ -270,8 +270,8 @@ def getValuesFromServer():
     sendToGateway('get info')
     #   currentTxValue.set(mycall)          #Subscriber  call
     #    master.set(servers[0])              #DMR Master
-    #   repeaterID.set(311317)              #DMR Peer ID
-    #   subscriberID.set(3113043)           #DMR Subscriber radio ID
+    #   repeaterID.set(12345)              #DMR Peer ID
+    #   subscriberID.set(54321)           #DMR Subscriber radio ID
     slot.set(2)                         #current slot
     listbox.selection_set(0)            #current TG
     connectedMsg.set("Connected to")    #current TG
