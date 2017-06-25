@@ -35,13 +35,25 @@ ip_address = "127.0.0.1"
 UDP_PORT = 2460
 
 
-reset = bytearray.fromhex("61 00 01 00 33");
-setDstar = bytearray.fromhex("61 00 0d 00 0a 01 30 07 63 40 00 00 00 00 00 00 48");
-getProdId = bytearray.fromhex("61 00 01 00 30");
-getVersion = bytearray.fromhex("61 00 01 00 31");
+reset = bytearray.fromhex("61 00 01 00 33")
+setDstar = bytearray.fromhex("61 00 0d 00 0a 01 30 07 63 40 00 00 00 00 00 00 48")
+getProdId = bytearray.fromhex("61 00 01 00 30")
+getVersion = bytearray.fromhex("61 00 01 00 31")
 setDMR = bytearray.fromhex("61 00 0D 00 0A 04 31 07 54 24 00 00 00 00 00 6F 48")
+encodeAMBE = bytearray.fromhex("61 00 0B 01 01 48")
+encodePCM = bytearray.fromhex("61 01 42 02 00")
 
 silence = bytearray.fromhex("AC AA 40 20 00 44 40 80 80")
+
+shouldStopOnError = False
+errorCount = 0
+verbose = False
+
+def stopOnError():
+    global errorCount
+    errorCount += 1
+    if shouldStopOnError == True:
+        exit(1)
 
 def ambeSend( port, cmd ):
     if useSerial == True:
@@ -51,7 +63,15 @@ def ambeSend( port, cmd ):
 
 def ambeRecv( port ):
     if useSerial == True:
-        _val = port.read(1024)
+        _val1 = port.read(4)                                # Read the header
+        if len(_val1) == 4:
+            _packetLen = (ord(_val1[1]) * 256) + ord(_val1[2])  # Grab the packet length
+            _val2 = port.read(_packetLen)                       # Read the rest of the data
+            _val = _val1 + _val2                                # Concat the header and the payload
+        else:
+            print 'Error, AMBE header was corrupt'
+            stopOnError()
+            return 0, ''
         return len(_val), _val
     else:
         try:
@@ -62,51 +82,59 @@ def ambeRecv( port ):
         return len(data), data
 
 def ambeValidate( port, cmd, expect, label ):
-	print "Testing", label
-	_wrote = ambeSend( port, cmd )
-	if _wrote != len(cmd):
-		print 'Error, tried to write', len(cmd),'and did write',_wrote,'bytes',label
-	else:
-		_readLen, buffer = ambeRecv(port)
-		if _readLen == 0:
-			print 'Error, no reply from DV3000.  Command issued was:', label
-		else:
-			if ord(buffer[0]) != 0x61:
-				print 'Errror, DV3000 send back invalid start byte.  Expected 0x61 and got', ord(buffer[0]),label
-				print ''.join('{:02x}'.format(ord(x)) for x in buffer)
-			else:
-				_packetLen = (ord(buffer[1]) * 256) + ord(buffer[2])
-				if _readLen != (_packetLen+4):
-					print 'Error, read', _readLen,'Bytes and AMBE header says it has',_packetLen,'bytes',label
-					print ''.join('{:02x}'.format(ord(x)) for x in buffer)
-				else:
-					_payload = buffer[5:]
-					if len(_payload) > 0:
-						for x in range(0,len(expect)):
-							if ord(_payload[x]) != expect[x]:
-								print "In test", label
-								print 'Error, did not get expected value from DV3000.  Got:',_payload,'expected',expect
-								print ''.join('{:02x}'.format(ord(x)) for x in _payload)
-								return None
-					print 'Test result: Success ('+''.join('{:02x}'.format(ord(x)) for x in buffer)+")"
-					return _payload
-	return None
+    if verbose == True:
+        print "Testing", label
+    _wrote = ambeSend( port, cmd )
+    if _wrote != len(cmd):
+        print 'Error, tried to write', len(cmd),'and did write',_wrote,'bytes',label
+        stopOnError()
+    else:
+        _readLen, buffer = ambeRecv(port)
+        if _readLen == 0:
+            print 'Error, no reply from DV3000.  Command issued was:', label
+            stopOnError()
+        else:
+            if ord(buffer[0]) != 0x61:
+                print 'Errror, DV3000 send back invalid start byte.  Expected 0x61 and got', ord(buffer[0]),label
+                print ''.join('{:02x}'.format(ord(x)) for x in buffer)
+                stopOnError()
+            else:
+                _packetLen = (ord(buffer[1]) * 256) + ord(buffer[2])
+                if _readLen != (_packetLen+4):
+                    print 'Error, read', _readLen,'Bytes and AMBE header says it has',_packetLen,'bytes',label
+                    print ''.join('{:02x}'.format(ord(x)) for x in buffer)
+                    stopOnError()
+                else:
+                    _payload = buffer[5:]
+                    if len(_payload) > 0:
+                        for x in range(0,len(expect)):
+                            if ord(_payload[x]) != expect[x]:
+                                print "In test", label
+                                print 'Error, did not get expected value from DV3000.  Got:',_payload,'expected',expect
+                                print ''.join('{:02x}'.format(ord(x)) for x in _payload)
+                                stopOnError()
+                                return None
+                    if verbose == True:
+                        print 'Test result: Success ('+''.join('{:02x}'.format(ord(x)) for x in buffer)+")"
+                    return buffer[0:4], _payload
+    return None
 
 
 def main(argv):
     global useSerial
     global _sock
     global ip_address
+    global verbose
     
     useSerial = True
     SERIAL_BAUD=230400
     serialport = "/dev/ttyAMA0"
     try:
-        opts, args = getopt.getopt(argv,"hns:i:",["serial="])
+        opts, args = getopt.getopt(argv,"vehns:i:",["serial="])
     except getopt.GetoptError:
-        print 'AMBEtest4.py -s <serial port>'
-        print 'AMBEtest4.py -n -s <serial port> (for ThumbDV Model A)'
-        print 'AMBEtest4.pi -i address'
+        print 'AMBEtest4.py [-e -v] -s <serial port>'
+        print 'AMBEtest4.py [-e -v -n] -s <serial port> (for ThumbDV Model A)'
+        print 'AMBEtest4.pi [-e -v] -i address'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
@@ -117,6 +145,10 @@ def main(argv):
         elif opt in ("-i", "--ip"):
             useSerial = False
             ip_address = arg
+        elif opt in ("-e", "--error"):
+            shouldStopOnError = True
+        elif opt in ("-v", "--verbose"):
+            verbose = True
         elif opt == "-n":
             SERIAL_BAUD=460800
 
@@ -151,7 +183,8 @@ def main(argv):
         port = _sock
 
     print '*********************'
-
+    if verbose != True:
+        print 'Silent testing mode.....'
 
     ambeValidate(port, reset, bytearray.fromhex("39"), 'Reset DV3000')
     ambeValidate(port, getProdId, bytearray.fromhex("414d4245333030305200"), 'Get Product ID')
@@ -161,16 +194,37 @@ def main(argv):
     ambeValidate(port, reset, bytearray.fromhex("39"), 'Reset DV3000')
     ambeValidate(port, setDMR, bytearray.fromhex("00"), 'Set DMR Mode')
 
-    for _ in range(0,10):
-        DMRAmbe = bytearray.fromhex("61 00 0B 01 01 48") + silence
-        _payload = ambeValidate(port, DMRAmbe, bytearray.fromhex("a0"), 'Decode AMBE')
+    for _ in range(0,1000):
+        DMRAmbe = encodeAMBE + silence
+        _header, _payload = ambeValidate(port, DMRAmbe, bytearray.fromhex("a0"), 'Decode AMBE')
         if _payload != None:
-            DMRPCM = bytearray.fromhex("61 01 43 02 00 A0") + _payload
+            if len(_payload) != 321: # 320 of PCM plus one bit length byte
+                print 'Error, did not get the right number of PCM bytes back from an encode',len(_payload)
+                stopOnError()
+            if ord(_header[3]) != 0x02: # type is AUDIO
+                print 'Error, PCM type is invalid', ord(_header[3])
+                stopOnError()
+            DMRPCM = encodePCM + _payload 
             expect = bytearray.fromhex("48954be6500310b00777")
-            ambeValidate(port, DMRPCM, '', 'Encode PCM')
-        sleep(1)
-
+            _header, _payload = ambeValidate(port, DMRPCM, '', 'Encode PCM')
+            if _payload != None:
+                if len(_payload) != 10: # 9 of AMBE plus one TYPE byte
+                    print 'Error, did not get the right number of AMBE bytes back from an encode',len(_payload)
+                    stopOnError()
+                if ord(_header[3]) != 0x01: # type is AMBE
+                    print 'Error, AMBE type is invalid', ord(_header[3])
+                    stopOnError()
+                if ord(_payload[0]) != 0x48: # 72 bits in length
+                    print 'AMBE bit length is not correct', ord(_payload[0])
+                    stopOnError()
+            else:
+                print 'Error, encode PCM to AMBE return no results'
+                stopOnError()
+        else:
+            print 'Error, decode AMBE to PCM return no results'
+            stopOnError()
+    print 'Error count = ', errorCount
 
 if __name__ == "__main__":
-	main(sys.argv[1:])
+    main(sys.argv[1:])
 
