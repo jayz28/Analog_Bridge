@@ -208,7 +208,7 @@ def main(argv):
             expect = bytearray.fromhex("48954be6500310b00777")
             _header, _payload = ambeValidate(port, DMRPCM, '', 'Encode PCM')
             if _payload != None:
-                if len(_payload) != 10: # 9 of AMBE plus one TYPE byte
+                if len(_payload) != 10: # 9 of AMBE plus one bit length byte
                     print 'Error, did not get the right number of AMBE bytes back from an encode',len(_payload)
                     stopOnError()
                 if ord(_header[3]) != 0x01: # type is AMBE
