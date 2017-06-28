@@ -196,13 +196,16 @@ def main(argv):
 
     for _ in range(0,1000):
         DMRAmbe = encodeAMBE + silence
-        _header, _payload = ambeValidate(port, DMRAmbe, bytearray.fromhex("00a0"), 'Decode AMBE')
+        _header, _payload = ambeValidate(port, DMRAmbe, '', 'Decode AMBE')
         if _payload != None:
             if _header+_payload == str(bytearray.fromhex("6100010039")):
                 print "Error, the DV3000 has unexpectly reset"
                 stopOnError()
             elif len(_payload) != 322: # 320 of PCM plus one field ID and one bit length byte
                 print 'Error, did not get the right number of PCM bytes back from an encode',len(_payload)
+                stopOnError()
+            elif (ord(_payload[0]) != 0x00) or (ord(_payload[1]) != 0xa0):
+                print 'Error, PCM should be channel 0 and have 320 bits'
                 stopOnError()
             elif ord(_header[3]) != 0x02: # type is AUDIO
                 print 'Error, PCM type is invalid', ord(_header[3])
