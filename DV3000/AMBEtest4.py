@@ -53,7 +53,7 @@ def stopOnError():
     global errorCount
     errorCount += 1
     if shouldStopOnError == True:
-        exit(1)
+        quit()
 
 def ambeSend( port, cmd ):
     if useSerial == True:
@@ -113,11 +113,11 @@ def ambeValidate( port, cmd, expect, label ):
                                 print 'Error, did not get expected value from DV3000.  Got:',_payload,'expected',expect
                                 print ''.join('{:02x}'.format(ord(x)) for x in _payload)
                                 stopOnError()
-                                return None
+                                return None, None
                     if verbose == True:
                         print 'Test result: Success ('+''.join('{:02x}'.format(ord(x)) for x in buffer)+")"
                     return buffer[0:4], _payload
-    return None
+    return None, None
 
 
 def main(argv):
@@ -125,6 +125,7 @@ def main(argv):
     global _sock
     global ip_address
     global verbose
+    global shouldStopOnError
     
     useSerial = True
     SERIAL_BAUD=230400
