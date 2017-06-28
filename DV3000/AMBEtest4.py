@@ -105,7 +105,7 @@ def ambeValidate( port, cmd, expect, label ):
                     print ''.join('{:02x}'.format(ord(x)) for x in buffer)
                     stopOnError()
                 else:
-                    _payload = buffer[5:]
+                    _payload = buffer[4:]
                     if len(_payload) > 0:
                         for x in range(0,len(expect)):
                             if ord(_payload[x]) != expect[x]:
@@ -187,34 +187,43 @@ def main(argv):
         print 'Silent testing mode.....'
 
     ambeValidate(port, reset, bytearray.fromhex("39"), 'Reset DV3000')
-    ambeValidate(port, getProdId, bytearray.fromhex("414d4245333030305200"), 'Get Product ID')
-    ambeValidate(port, getVersion, bytearray.fromhex("563132302e453130302e585858582e433130362e473531342e523030392e42303031303431312e433030323032303800"), 'Get Version')
-    ambeValidate(port, setDstar, bytearray.fromhex("00"), 'Set DSTAR Mode')
+    ambeValidate(port, getProdId, bytearray.fromhex("30414d4245333030305200"), 'Get Product ID')
+    ambeValidate(port, getVersion, bytearray.fromhex("31563132302e453130302e585858582e433130362e473531342e523030392e42303031303431312e433030323032303800"), 'Get Version')
+    ambeValidate(port, setDstar, bytearray.fromhex("0a00"), 'Set DSTAR Mode')
 
     ambeValidate(port, reset, bytearray.fromhex("39"), 'Reset DV3000')
-    ambeValidate(port, setDMR, bytearray.fromhex("00"), 'Set DMR Mode')
+    ambeValidate(port, setDMR, bytearray.fromhex("0a00"), 'Set DMR Mode')
 
     for _ in range(0,1000):
         DMRAmbe = encodeAMBE + silence
-        _header, _payload = ambeValidate(port, DMRAmbe, bytearray.fromhex("a0"), 'Decode AMBE')
+        _header, _payload = ambeValidate(port, DMRAmbe, bytearray.fromhex("00a0"), 'Decode AMBE')
         if _payload != None:
-            if len(_payload) != 321: # 320 of PCM plus one bit length byte
+            if _header+_payload == str(bytearray.fromhex("6100010039")):
+                print "Error, the DV3000 has unexpectly reset"
+                stopOnError()
+            elif len(_payload) != 322: # 320 of PCM plus one field ID and one bit length byte
                 print 'Error, did not get the right number of PCM bytes back from an encode',len(_payload)
                 stopOnError()
-            if ord(_header[3]) != 0x02: # type is AUDIO
+            elif ord(_header[3]) != 0x02: # type is AUDIO
                 print 'Error, PCM type is invalid', ord(_header[3])
                 stopOnError()
             DMRPCM = encodePCM + _payload 
             expect = bytearray.fromhex("48954be6500310b00777")
             _header, _payload = ambeValidate(port, DMRPCM, '', 'Encode PCM')
             if _payload != None:
-                if len(_payload) != 10: # 9 of AMBE plus one bit length byte
+                if _header+_payload == str(bytearray.fromhex("6100010039")):
+                    print "Error, the DV3000 has unexpectly reset"
+                    stopOnError()
+                elif len(_payload) != 11: # 9 of AMBE plus one bit length byte
                     print 'Error, did not get the right number of AMBE bytes back from an encode',len(_payload)
                     stopOnError()
-                if ord(_header[3]) != 0x01: # type is AMBE
+                elif ord(_header[3]) != 0x01: # type is AMBE
                     print 'Error, AMBE type is invalid', ord(_header[3])
                     stopOnError()
-                if ord(_payload[0]) != 0x48: # 72 bits in length
+                elif ord(_payload[0]) != 0x01: #channel ID must be 1
+                    print 'AMBE channel ID is not correct'
+                    stopOnError()
+                elif ord(_payload[1]) != 0x48: # 72 bits in length
                     print 'AMBE bit length is not correct', ord(_payload[0])
                     stopOnError()
             else:
