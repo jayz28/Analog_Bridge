@@ -41,7 +41,7 @@ getProdId = bytearray.fromhex("61 00 01 00 30")
 getVersion = bytearray.fromhex("61 00 01 00 31")
 setDMR = bytearray.fromhex("61 00 0D 00 0A 04 31 07 54 24 00 00 00 00 00 6F 48")
 encodeAMBE = bytearray.fromhex("61 00 0B 01 01 48")
-encodePCM = bytearray.fromhex("61 01 42 02 00")
+encodePCM = bytearray.fromhex("61 01 43 02 00")
 
 silence = bytearray.fromhex("AC AA 40 20 00 44 40 80 80")
 
