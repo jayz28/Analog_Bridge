@@ -15,6 +15,7 @@ telemdynamic = 0                        ; 0 = disallow users to change the local
 
 linktolink = no                         ; disables forcing physical half-duplex operation of main repeater while
                                         ; still keeping half-duplex semantics (optional)
+nounkeyct = 1                   				; Set to a 1 to eliminate courtesy tones and associated delays.
 
 [functions]
 ; Thanks to Tom, K5TRA
