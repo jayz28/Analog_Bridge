@@ -5,7 +5,7 @@ add required libraries:
 apt-get install libwxgtk3.0-dev libusb-1.0
 
 cd OpenDV/DummyRepeater
-
+./configure
 make
 If all went well:
 make install
