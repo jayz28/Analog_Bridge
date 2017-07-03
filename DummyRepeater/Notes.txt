@@ -18,7 +18,7 @@ USRP_IP="127.0.0.1";export USRP_IP
 USRP_TXPORT=34001;export USRP_TXPORT
 USRP_RXPORT=32001;export USRP_RXPORT
 
-These can be perement or run from a script.
+These can be permanent or run from a script.
 
 Sound:
 You do not need a real sound device to use DummyRepeater with AllStarLink. DummyRepeater will work with a "dummy" sound device.
