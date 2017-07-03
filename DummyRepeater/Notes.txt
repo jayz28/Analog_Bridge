@@ -1,0 +1,29 @@
+Sound:
+You do not need a real sound device to use DummyRepeater with AllStarLink. DummyRepeater will work with a "dummy" sound device.
+Add snd-dummy to /etc/modules and reboot or run modprobe snd-dummy
+aplay-l will show you your sound devices
+root@d-star:/etc# aplay -l
+**** List of PLAYBACK Hardware Devices ****
+card 2: Dummy [Dummy], device 0: Dummy PCM [Dummy PCM]
+
+To make this the default for alsamixer etc, create /etc/asound.conf
+defaults.pcm.card 2
+defaults.ctl.card 2
+The number comes from the output of aplay -l
+
+In DummyRepeater/Preferences/Sound Card you should see  Dummy PCM (Dummy) select it and restart DummyRepeater
+
+Note: you can enable the onboard sound output device for a local monitor (speaker)
+This is outside of the scope of these notes.
+
+Video:
+DummyRepeater unlike ircDDBGateway and RemoreControl, does not have a daemon version. It requires a display. You can "fake this" using a virtual frame buffer.
+Install it using apt-get install xvfb.
+Start it in the background with Xvfb -shmem -screen 0 1280x1024x24 &
+You can then run DummyRepeater with DISPLAY=:0 dummyrepeater
+
+You can automate this.
+This is outside of the scope of these notes.
+
+73, Steve N4IRS
+
