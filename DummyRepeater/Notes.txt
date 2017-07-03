@@ -1,3 +1,25 @@
+Buiing DummyRepeater:
+Checkout OpenDV from https://github.com/dl5di/OpenDV
+Replace OpenDV/DummyRepeater/DummyRepeater/DummyRepeaterThread.cpp with DummyRepeaterThread.cpp from this repository
+add required libraries:
+apt-get install libwxgtk3.0-dev libusb-1.0
+
+cd OpenDV/DummyRepeater
+
+make
+If all went well:
+make install
+
+The modified version of DummyRepeater will use the USRP channel driver from AllStarLink (Just like Analog_Bridge)
+DummyRepeater will use the default UDP ports for TX and RX. It uses address 127.0.0.1 as defined by the USRP channel driver.
+If you need to use other ports or addresses, you can define them in the enviorment before you start dummyrepeter.
+
+USRP_IP="127.0.0.1";export USRP_IP
+USRP_TXPORT=34001;export USRP_TXPORT
+USRP_RXPORT=32001;export USRP_RXPORT
+
+These can be perement or run from a script.
+
 Sound:
 You do not need a real sound device to use DummyRepeater with AllStarLink. DummyRepeater will work with a "dummy" sound device.
 Add snd-dummy to /etc/modules and reboot or run modprobe snd-dummy
@@ -25,5 +47,18 @@ You can then run DummyRepeater with DISPLAY=:0 dummyrepeater
 You can automate this.
 This is outside of the scope of these notes.
 
-73, Steve N4IRS
+Remote Control:
+remotecontrold "N4IRS B" link 15 "REF001 C"
+
+Which links N4IRS B to REF001 C with a 15 minute reconnect timer.
+
+Other valid command formats are:
+
+remotecontrold "N4IRS B" unlink"
+remotecontrold "N4IRS B" link never "REF001 C"
+remotecontrold "N4IRS B" link fixed "REF001 C"
+
+You can also default ircDDBGateway to connect at startup by editing reflector1 in the ircddbgateway config file reflector1=REF001 C 
+
+73, Steve N4IRS and Mike N4IRR
 
