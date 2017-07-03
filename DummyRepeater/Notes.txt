@@ -20,6 +20,9 @@ USRP_RXPORT=32001;export USRP_RXPORT
 
 These can be permanent or run from a script.
 
+Modify your node stanza so that you do NOT put ASL telemetry out on D-Star. Use this as a example:
+https://github.com/N4IRS/Analog_Bridge/blob/master/rpt.conf.txt
+
 Sound:
 You do not need a real sound device to use DummyRepeater with AllStarLink. DummyRepeater will work with a "dummy" sound device.
 Add snd-dummy to /etc/modules and reboot or run modprobe snd-dummy
