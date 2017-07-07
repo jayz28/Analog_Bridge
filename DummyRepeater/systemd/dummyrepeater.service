@@ -1,0 +1,15 @@
+[Unit]
+Description=D-STAR DummyRepeater Daemon
+After=ircddbgatewayd.service 
+
+[Service]
+# User=opendv
+EnvironmentFile=/etc/opendv/dummyrepeater.conf
+ExecStart=/usr/local/bin/dummyrepeater
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
+
+
+

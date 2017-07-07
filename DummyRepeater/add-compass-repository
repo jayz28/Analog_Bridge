@@ -5,8 +5,8 @@ echo 'deb [arch=armhf,amd64] http://archive.compasslinux.org/ wilderness main' >
 wget http://archive.compasslinux.org/compass.gpg.key -O - | sudo apt-key add -
 apt-get update
 
-apt-get install ambeserver
-apt-get install ircddbgateway ircddbgatewayd
-apt-get install remotecontrol remotecontrold
+# apt-get install ambeserver
+# apt-get install ircddbgateway ircddbgatewayd
+# apt-get install remotecontrol remotecontrold
 
 

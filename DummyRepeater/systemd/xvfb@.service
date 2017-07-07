@@ -1,0 +1,10 @@
+[Unit]
+Description=virtual frame buffer X server for display %I
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/Xvfb -shmem -screen &I 1280x1024x24
+
+[Install]
+WantedBy=multi-user.target
+

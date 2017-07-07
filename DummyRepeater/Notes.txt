@@ -26,7 +26,7 @@ https://github.com/N4IRS/Analog_Bridge/blob/master/rpt.conf.txt
 Sound:
 You do not need a real sound device to use DummyRepeater with AllStarLink. DummyRepeater will work with a "dummy" sound device.
 Add snd-dummy to /etc/modules and reboot or run modprobe snd-dummy
-aplay-l will show you your sound devices
+aplay -l will show your sound devices
 root@d-star:/etc# aplay -l
 **** List of PLAYBACK Hardware Devices ****
 card 2: Dummy [Dummy], device 0: Dummy PCM [Dummy PCM]
@@ -57,9 +57,9 @@ Which links N4IRS B to REF001 C with a 15 minute reconnect timer.
 
 Other valid command formats are:
 
-remotecontrold "N4IRS B" unlink"
-remotecontrold "N4IRS B" link never "REF001 C"
-remotecontrold "N4IRS B" link fixed "REF001 C"
+remotecontrold "N4IRS  B" unlink
+remotecontrold "N4IRS  B" link never "REF001 C"
+remotecontrold "N4IRS  B" link fixed "REF001 C"
 
 You can also default ircDDBGateway to connect at startup by editing reflector1 in the ircddbgateway config file reflector1=REF001 C 
 
