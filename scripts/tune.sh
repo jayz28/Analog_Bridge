@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 IP_ADDRESS="127.0.0.1"
 IP_PORT=31000
@@ -12,7 +12,7 @@ CC=1
 TAG_TG_TUNE=3
 TAG_SET_INFO=8
 
-function setTG {
+function setTG() {
     printf "setTG tg=$1\n" $1
 python - <<END
 #!/usr/bin/env python
@@ -29,7 +29,7 @@ send_tlv($TAG_TG_TUNE, '='+str("$1"))    # start transmission
 END
 }
 
-function setDMRInfo {
+function setDMRInfo() {
     printf "setDMRInfo: src_id=%d repeater_id=%d dest_id=%d slot=%d cc=%d\n" $1 $2 $3 $4 $5
 python - <<END
 #!/usr/bin/env python
@@ -69,7 +69,11 @@ END
 if [ "$#" -eq 0 ]; then
     TG=3100
 else
-    TG=$1
+    REPEATER_ID=$1
+    DMR_ID=$2
+    TG=$3
+    SLOT=$4
+    CC=$5
 fi
 
 setDMRInfo $REPEATER_ID $DMR_ID $TG $SLOT $CC
