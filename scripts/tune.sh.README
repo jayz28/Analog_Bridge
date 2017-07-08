@@ -1,0 +1,8 @@
+
+tune.sh source_ID repeater_ID TG SLOT CC
+
+tune.sh 1234567 654321 3167 2 4
+
+Tune to Slot: 2 Talk Group: 3167 Color Code: 4 All traffic is coming from User ID: 1234567 using repeater ID: 654321
+
+
