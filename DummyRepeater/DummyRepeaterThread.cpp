@@ -52,7 +52,9 @@ public:
 	USRP():
 	m_seq(0),
 	m_usrpFD(0),
-	m_usrpTx(false)
+	m_usrpTx(false),
+	m_message(),
+	m_packetTimeout(0)
 	{
 	}
 	~USRP() {
@@ -66,38 +68,88 @@ public:
 		m_usrpFD = openSocket(ip, rxPort, txPort);
 		::memset((void *)&m_usrpPacket, 0, sizeof(m_usrpPacket));
 		memcpy(m_usrpPacket.eye, "USRP", 4);
-		m_usrpPacket.keyup = htonl(1);
-		m_usrpPacket.type = USRP_TYPE_VOICE;
 		wxLogMessage(wxT("Open network connection to USRP"));
 	}
 	void sendAudioToUSRP(const wxFloat32* audio) {
+		if (m_usrpPacket.keyup == 0)
+			wxLogMessage(wxT("Begin exporting PCM"));
+		m_usrpPacket.type = USRP_TYPE_VOICE;
 		m_usrpPacket.seq = htonl(m_seq++);
+		m_usrpPacket.keyup = htonl(1);
 		for (int i=0;i<USRP_PCM_SAMPLES;i++)
-			m_usrpPacket.audio[i] = (short)((audio[i*6]) * 32768.0F);
+			m_usrpPacket.audio[i] = (short)((audio[i*6]) * 32768.0F /  3.0F);
 		int sentBytes = ::sendto(m_usrpFD, (const void *)&m_usrpPacket, sizeof(m_usrpPacket), MSG_DONTWAIT, (struct sockaddr *)&m_sa_write, (ssize_t)sizeof(struct sockaddr_in));
+	}
+	void setTransmit( bool state ) {
+		bool transmittingToPartner = m_usrpPacket.keyup == htonl(1);
+		if ((state == false)  && transmittingToPartner) {
+			m_usrpPacket.type = USRP_TYPE_VOICE;
+			m_usrpPacket.seq = htonl(m_seq++);
+			m_usrpPacket.keyup = htonl(0);
+			int size = sizeof(m_usrpPacket) - sizeof(m_usrpPacket.audio);
+			int sentBytes = ::sendto(m_usrpFD, (const void *)&m_usrpPacket, size, MSG_DONTWAIT, (struct sockaddr *)&m_sa_write, (ssize_t)sizeof(struct sockaddr_in));
+			wxLogMessage(wxT("End exporting PCM"));
+		}
+	}
+	void sendMetaData( const char *callSign ) {
+		m_usrpPacket.type = USRP_TYPE_TEXT;
+		m_usrpPacket.seq = htonl(m_seq++);
+		m_usrpPacket.keyup = htonl(0);
+		int size = sizeof(m_usrpPacket) - sizeof(m_usrpPacket.audio) + strlen(callSign) + 1;
+		strcpy( (char *)m_usrpPacket.audio, callSign );
+		int sentBytes = ::sendto(m_usrpFD, (const void *)&m_usrpPacket, size, MSG_DONTWAIT, (struct sockaddr *)&m_sa_write, (ssize_t)sizeof(struct sockaddr_in));
 	}
 	void getAudioFromUSRP(CDongleThread *m_dongle) {
 		if (isUsrpTxReady()) {
 			struct _chan_usrp_bufhdr rxPacket;
 			socklen_t sl = sizeof(struct sockaddr_in);
 			int n = recvfrom(m_usrpFD, (void *)&rxPacket, sizeof(rxPacket), 0, (struct sockaddr *)&m_sa_read, &sl);
-			wxFloat32 audioOut[960];
-			int j = 0;
-			for(int i=0;i<USRP_PCM_SAMPLES;i++) {
-				audioOut[j++] = wxFloat32(rxPacket.audio[i]) / 32768.0F * 6.0F;
-				audioOut[j++] = 0;
-				audioOut[j++] = 0;
-				audioOut[j++] = 0;
-				audioOut[j++] = 0;
-				audioOut[j++] = 0;
+			switch (rxPacket.type) {
+				case USRP_TYPE_VOICE:
+				{
+					bool localTX  = ntohl(rxPacket.keyup) == 1;
+					if (localTX == true) { // USRP packet with audio
+						wxFloat32 audioOut[960];
+						int j = 0;
+						for(int i=0;i<USRP_PCM_SAMPLES;i++) {
+							audioOut[j++] = wxFloat32(rxPacket.audio[i]) / 32768.0F * 6.0F;
+							audioOut[j++] = 0;
+							audioOut[j++] = 0;
+							audioOut[j++] = 0;
+							audioOut[j++] = 0;
+							audioOut[j++] = 0;
+						}
+						m_dongle->writeEncode(audioOut, 960);
+						m_packetTimeout = time(NULL) + 2;
+					} else
+						m_message.Empty();	//delete metadata when PTT is deasserted
+					if (localTX != m_usrpTx) 
+						wxLogMessage(wxT("%s encoding PCM"), localTX ? "Begin" : "End");
+					m_usrpTx = localTX;
+				}
+				break;
+			case USRP_TYPE_DTMF:
+				wxLogMessage(wxT("USRP packet type: USRP_TYPE_DTMF"));
+				break;
+			case USRP_TYPE_TEXT:
+				m_message = wxString((char *)rxPacket.audio);
+				wxLogMessage(wxT("USRP packet type: USRP_TYPE_TEXT (%s)"), m_message.c_str());
+				break;
 			}
-
-			m_dongle->writeEncode(audioOut, 960);
-			m_usrpTx  = ntohl(rxPacket.keyup) == 1;
 		}
 	}
 	bool getRadioSquelch1(){
-			return  m_usrpTx || isUsrpTxReady();
+		bool isReady = isUsrpTxReady();
+		if (m_usrpTx && (isReady == false)) {// thinks it is keyed but no data from partner
+			if (time(NULL) > m_packetTimeout) {
+				m_usrpTx = false;	// have not seen a packet in too long
+				wxLogMessage(wxT("TX timeout.  Have not seen USRP packet in too long"));
+			}
+		}
+		return  m_usrpTx || isReady;
+	}
+	wxString getMessage() {
+		return m_message;
 	}
 protected:
 	int openSocket(char *hostName, int portNumberRx, int portNumberTx) {
@@ -149,6 +201,8 @@ private:
 	struct sockaddr_in m_sa_read, m_sa_write;
 	struct _chan_usrp_bufhdr m_usrpPacket;	// A prototype packet to fill in and send to USRP
 	bool m_usrpTx;							// local PTT flag (tracks the keyup in USRP packets)
+	wxString m_message;
+	time_t m_packetTimeout;
 };
 
 USRP usrp;	// Cheap hack, create a stsic instance of the class
@@ -530,7 +584,9 @@ void CDummyRepeaterThread::transmit()
 	serviceNetwork();
 	checkController();
 
-	if (!m_message.IsEmpty())
+	if (!usrp.getMessage().IsEmpty())
+		m_slowDataEncoder.setMessageData(usrp.getMessage());
+	else if (!m_message.IsEmpty())
 		m_slowDataEncoder.setMessageData(m_message);
 
 	m_protocol->writeHeader(*header);
@@ -600,6 +656,7 @@ void CDummyRepeaterThread::processHeader(CHeaderData* header)
 
 	// Tell the GUI, this must be last
 	::wxGetApp().showHeader(header);
+	usrp.sendMetaData( header->getMyCall1().c_str() );
 
 	m_dongle->setDecode();
 
@@ -720,6 +777,7 @@ void CDummyRepeaterThread::resetReceiver()
 	m_watchdog.stop();
 
 	m_busy = false;
+	usrp.setTransmit(false);
 }
 
 void CDummyRepeaterThread::serviceNetwork()
