@@ -89,6 +89,8 @@ public:
 			int size = sizeof(m_usrpPacket) - sizeof(m_usrpPacket.audio);
 			int sentBytes = ::sendto(m_usrpFD, (const void *)&m_usrpPacket, size, MSG_DONTWAIT, (struct sockaddr *)&m_sa_write, (ssize_t)sizeof(struct sockaddr_in));
 			wxLogMessage(wxT("End exporting PCM"));
+		} else {
+			wxLogMessage(wxT("setTransmit called but nothing done. state=%d, ttp=%d"), state, transmittingToPartner);
 		}
 	}
 	void sendMetaData( const char *callSign ) {
@@ -290,7 +292,8 @@ void* CDummyRepeaterThread::Entry()
 void CDummyRepeaterThread::decodeCallback(const wxFloat32* audio, unsigned int length)
 {
 	m_decodeAudio.addData(audio, length);
-	usrp.sendAudioToUSRP(audio);	// Send PCM to the USRP channel driver
+	if (m_busy) // is this packet still in transmit mode?
+		usrp.sendAudioToUSRP(audio);	// Send PCM to the USRP channel driver
 }
 
 void CDummyRepeaterThread::encodeCallback(const unsigned char* ambe, unsigned int length, PTT_STATE state)
