@@ -1,0 +1,17 @@
+[Unit]
+Description=HBlink HB_Bridge Service
+# Place this file in /lib/systemd/system
+
+[Service]
+Type=simple
+StandardOutput=null
+WorkingDirectory=/opt/HB_Bridge
+Restart=always
+RestartSec=3
+ExecStart=/usr/bin/python /opt/HB_Bridge/HB_Bridge.py
+ExecReload=/bin/kill -2 $MAINPID
+KillMode=process
+
+[Install]
+WantedBy=network-online.target
+
