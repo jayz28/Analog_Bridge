@@ -1,0 +1,19 @@
+[Unit]
+Description=Check for internet connectivity
+# Description=Place this file in /lib/systemd/system
+# Description=N4IRS 6/09/2017 
+After=syslog.target
+
+[Service]
+Type=forking
+StandardOutput=null
+#WorkingDirectory=/opt/Analog_Bridge
+#Restart=always
+#RestartSec=3
+ExecStart=/usr/local/sbin/netcheck
+#ExecReload=/bin/kill -2 $MAINPID
+#KillMode=process
+# RemainAfterExit=yes
+
+[Install]
+WantedBy=network-online.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=D-STAR Gateway Daemon
+After=netcheck.service 
+Wants=network-online.target
+Requires=netcheck.service
+
+[Service]
+#User=opendv
+StandardOutput=null
+RestartSec=3
+# ExecStartPre=/usr/local/sbin/netcheck
+ExecStart=/usr/local/sbin/ircddbgatewayd
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
