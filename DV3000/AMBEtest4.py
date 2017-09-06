@@ -35,7 +35,7 @@ ip_address = "127.0.0.1"
 UDP_PORT = 2460
 
 
-reset = bytearray.fromhex("61 00 01 00 33")
+reset = bytearray.fromhex("61 00 06 00 34 05 00 00 0F 00 00")
 setDstar = bytearray.fromhex("61 00 0d 00 0a 01 30 07 63 40 00 00 00 00 00 00 48")
 getProdId = bytearray.fromhex("61 00 01 00 30")
 getVersion = bytearray.fromhex("61 00 01 00 31")
