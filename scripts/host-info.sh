@@ -88,7 +88,7 @@ fi
 # Get TI Debian if info available
 if [ -f /boot/SOC.sh ]
 then
-	source /boot/SOC.sh
+	system_type=ti_debian
 fi
 
 # Get Raspbian info if available
