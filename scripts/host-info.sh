@@ -97,7 +97,7 @@ fi
 if [[ -d "/proc/device-tree" && ! -L " /proc/device-tree" ]] ; then
         DEVTREE_MODEL=$(awk '{print $1} {print $2}' /proc/device-tree/model)
         DEVTREE_COMPATABLE=$(awk '{print $1} {print $2}' /proc/device-tree/compatible)
-	DEVTREE_SERIAL=$(awk '{print $1} {print $2}' /proc/device-tree/serial-number)
+	# DEVTREE_SERIAL=$(awk '{print $1} {print $2}' /proc/device-tree/serial-number)
 fi
 
 # Process /proc/cpuinfo results
@@ -117,6 +117,11 @@ CPU_LOAD=$(top -bn1 | grep load | awk '{printf "%.2f\n", $(NF-2)}')
 if [ -f /sys/class/thermal/thermal_zone0/temp ]
 then
         TEMPERATURE=$(awk '{printf("%.1f°F\n",(($1*1.8)/1e3)+32)}' /sys/class/thermal/thermal_zone0/temp)
+fi
+
+# Process getconf results if available
+if command_exists getconf ; then
+        getconf_long_bit=$(getconf LONG_BIT)
 fi
 
 HOSTNAME=$(hostname)
@@ -197,6 +202,7 @@ echo ""
         echo2 "Kernel-name =" "$uname_kernel_name"
         echo2 "Kernel-release =" "$uname_kernel_release"
         echo2 "Kernel-version =" "$uname_kernel_version"
+	echo2 "Data width (bits) =" "$getconf_long_bit"
         # echo ""
         echo2 "Free Memory =" "$FREE_MEM"
         echo2 "Disk Used =" "$DISK_USED"
